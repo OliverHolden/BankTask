@@ -93,19 +93,9 @@ springdoc.api-docs.enabled=true
 spring.h2.console.enabled=true
 ```
 
-In `SecurityConfig`, read the flag with `@Value` and only open the route when the property is true:
+The `SecurityConfig` `permitAll()` rules for these paths can remain unconditional. When a console is disabled via its property, the framework never registers the route, so the permit matches nothing and creates no security gap. The property itself is the gate — `SecurityConfig` does not need to inspect it.
 
-```java
-@Value("${spring.h2.console.enabled:false}")
-private boolean h2ConsoleEnabled;
-
-// inside authorizeHttpRequests lambda:
-if (h2ConsoleEnabled) {
-    auth.requestMatchers("/h2-console/**").permitAll();
-}
-```
-
-Never add an unconditional `permitAll()` for any admin or tooling endpoint.
+Never commit `spring.h2.console.enabled=true` or `springdoc.swagger-ui.enabled=true` to `application.properties`.
 
 ## Authentication
 
