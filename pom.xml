@@ -126,7 +126,6 @@
 					</execution>
 				</executions>
 				<configuration>
-					<apiToken>${snyk.token}</apiToken>
 					<failOnIssues>false</failOnIssues>
 				</configuration>
 			</plugin>

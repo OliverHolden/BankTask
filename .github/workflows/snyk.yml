@@ -20,4 +20,6 @@ jobs:
           cache: maven
 
       - name: Run Snyk vulnerability scan
-        run: mvn snyk:test -Dsnyk.token=${{ secrets.SNYK_TOKEN }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: mvn snyk:test
