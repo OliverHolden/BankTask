@@ -17,10 +17,10 @@ A RESTful banking API built with Spring Boot for the Barclays take-home coding t
 **Prerequisites:** Java 21 and Maven installed.
 
 ```bash
-mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-The API will start on `http://localhost:8080`.
+The dev profile must be active — it supplies `jwt.secret` which is absent from the base `application.properties`. The API will start on `http://localhost:8080`.
 
 ### Run with Docker
 

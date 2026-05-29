@@ -68,7 +68,7 @@ public class UserController {
 - `@RequiredArgsConstructor` for constructor injection (never `@Autowired` on fields)
 - `@Data` or `@Value` on DTOs
 - `@Builder` on response DTOs
-- `@Entity` classes: `@Data` + `@NoArgsConstructor` + `@AllArgsConstructor`
+- `@Entity` classes: `@Getter` + `@Setter` + `@Builder` + `@NoArgsConstructor` + `@AllArgsConstructor` + `@EqualsAndHashCode(onlyExplicitlyIncluded = true)` with `@EqualsAndHashCode.Include` on the `id` field — never `@Data` on entities
 
 **Validation** — annotate controller request parameters with `@Valid`; use `@NotBlank`, `@NotNull`, `@Email`, `@Pattern` on DTO fields as appropriate.
 
@@ -78,10 +78,13 @@ public class UserController {
 
 ### Configuration
 
-JWT secret and expiry must be externalised in `application.properties` and injected via `@Value` — never hardcoded:
+JWT secret is declared in `application-dev.properties` for local dev and must be supplied via environment variable in production — never hardcoded. Expiry lives in `application.properties` as it is not sensitive:
 
 ```properties
+# application-dev.properties (local only)
 jwt.secret=your-secret-key-min-32-chars
+
+# application.properties (committed)
 jwt.expiration-ms=3600000
 ```
 
