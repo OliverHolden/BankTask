@@ -17,4 +17,4 @@ jobs:
           cache: maven
 
       - name: Run integration tests (only *IntegrationTest)
-        run: mvn -B -Dtest="**/*IntegrationTest" test
+        run: mvn -B -Dspring.profiles.active=dev -Dtest="**/*IntegrationTest" test

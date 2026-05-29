@@ -1,18 +1,18 @@
 name: CI
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
   compile:
-    uses: ./.github/workflows/jobs/compile.yml
+    uses: ./.github/workflows/compile.yml
 
   unit-tests:
     needs: compile
-    uses: ./.github/workflows/jobs/unit-tests.yml
+    uses: ./.github/workflows/unit-tests.yml
 
   integration-tests:
     needs: unit-tests
-    uses: ./.github/workflows/jobs/integration-tests.yml
+    uses: ./.github/workflows/integration-tests.yml
