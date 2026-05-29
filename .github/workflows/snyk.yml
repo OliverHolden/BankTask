@@ -1,0 +1,23 @@
+name: Snyk Security Scan
+on:
+  workflow_call:
+    secrets:
+      SNYK_TOKEN:
+        required: true
+
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run Snyk vulnerability scan
+        run: mvn snyk:test -Dsnyk.token=${{ secrets.SNYK_TOKEN }}

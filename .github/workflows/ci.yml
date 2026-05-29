@@ -16,3 +16,9 @@ jobs:
   integration-tests:
     needs: unit-tests
     uses: ./.github/workflows/integration-tests.yml
+
+  snyk:
+    needs: integration-tests
+    uses: ./.github/workflows/snyk.yml
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
