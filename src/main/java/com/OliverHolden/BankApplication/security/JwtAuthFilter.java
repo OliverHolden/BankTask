@@ -1,7 +1,6 @@
 package com.OliverHolden.BankApplication.security;
 
 import com.OliverHolden.BankApplication.dto.response.ErrorResponse;
-import com.OliverHolden.BankApplication.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -13,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
@@ -26,7 +27,7 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository;
+    private final CustomUserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -45,12 +46,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             Jwt jwt = jwtTokenProvider.validateAndDecode(token);
             String userId = jwt.getSubject();
 
-            userRepository.findById(userId).ifPresentOrElse(user -> {
-                CustomUserPrincipal principal = new CustomUserPrincipal(user);
+            try {
+                UserDetails principal = userDetailsService.loadUserById(userId);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            }, () -> log.warn("Valid JWT references unknown userId: {}", userId));
+            } catch (UsernameNotFoundException e) {
+                log.warn("Valid JWT references unknown userId: {}", userId);
+                writeUnauthorized(response, "Access token is missing or invalid");
+                return;
+            }
 
         } catch (JwtException e) {
             log.warn("Invalid or expired JWT: {}", e.getMessage());

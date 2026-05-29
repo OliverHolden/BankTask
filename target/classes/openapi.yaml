@@ -418,7 +418,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: ^tan-[A-Za-z0-9]$
+            pattern: ^tan-[A-Za-z0-9]+$
       security:
         - bearerAuth: []
       responses:
@@ -484,6 +484,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
+        '409':
+          description: Email address is already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         '500':
           description: An unexpected error occurred
           content:
@@ -592,6 +598,12 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         '404':
           description: User was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '409':
+          description: Email address is already registered
           content:
             application/json:
               schema:

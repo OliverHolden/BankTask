@@ -7,7 +7,7 @@ mvn spring-boot:run   # start on http://localhost:8080
 mvn test              # run tests
 ```
 
-Swagger UI is available at `http://localhost:8080/swagger-ui/index.html` once running.
+Swagger UI is available at `http://localhost:8080/swagger-ui/index.html` when running with the `dev` profile (disabled by default).
 
 ## Package structure
 
@@ -75,6 +75,38 @@ public class UserController {
 
 **Constructor injection** — always inject dependencies via constructor (`@RequiredArgsConstructor`), not field injection.
 
+**Transactions** — annotate all write service methods (`create`, `update`, `delete`) with `@Transactional`. This makes the check-then-act pattern (e.g. `existsByEmail` + `save`) atomic and ensures concurrent requests can't race through a guard. Always catch `DataIntegrityViolationException` inside a `@Transactional` method and re-throw as a domain exception (e.g. `ConflictException`) so the constraint violation surfaces as the correct HTTP status rather than a 500.
+
+## Admin and debug consoles
+
+Admin and debug consoles (H2 console, Swagger UI, Spring Boot Actuator, etc.) must be **disabled by default in `application.properties`** and enabled only via an explicit opt-in in `application-dev.properties`. The same principle applies to the security permit: any `permitAll()` rule for a console path must be gated on the same property so that it cannot be reached in an environment where the console is off.
+
+```properties
+# application.properties — off by default
+springdoc.swagger-ui.enabled=false
+springdoc.api-docs.enabled=false
+spring.h2.console.enabled=false
+
+# application-dev.properties — opt in for local dev
+springdoc.swagger-ui.enabled=true
+springdoc.api-docs.enabled=true
+spring.h2.console.enabled=true
+```
+
+In `SecurityConfig`, read the flag with `@Value` and only open the route when the property is true:
+
+```java
+@Value("${spring.h2.console.enabled:false}")
+private boolean h2ConsoleEnabled;
+
+// inside authorizeHttpRequests lambda:
+if (h2ConsoleEnabled) {
+    auth.requestMatchers("/h2-console/**").permitAll();
+}
+```
+
+Never add an unconditional `permitAll()` for any admin or tooling endpoint.
+
 ## Authentication
 
 ### Configuration
@@ -92,9 +124,9 @@ jwt.expiration-ms=3600000
 ### Classes
 
 - **`JwtTokenProvider`** (`security/`) — generates a signed JWT on login (`sub` = userId), validates tokens, and extracts the userId from the `sub` claim. Explicitly reject expired tokens and invalid signatures with `401`.
-- **`JwtAuthFilter`** extends `OncePerRequestFilter` (`security/`) — extracts the `Authorization: Bearer <token>` header, calls `JwtTokenProvider` to validate, then populates `SecurityContextHolder`. Does nothing and passes through if no token is present (let Spring Security return 401).
+- **`JwtAuthFilter`** extends `OncePerRequestFilter` (`security/`) — extracts the `Authorization: Bearer <token>` header, calls `JwtTokenProvider` to validate, then uses `CustomUserDetailsService.loadUserById` to populate `SecurityContextHolder`. Passes through with no auth set if no token is present (Spring Security returns 401). Explicitly returns `401` if the token is valid but the user no longer exists.
 - **`CustomUserPrincipal`** implements `UserDetails` (`security/`) — wraps the `User` entity; must expose `getId()` so controllers can pass the authenticated userId to services.
-- **`CustomUserDetailsService`** implements `UserDetailsService` (`security/`) — loads a user by email for Spring Security's login flow.
+- **`CustomUserDetailsService`** implements `UserDetailsService` (`security/`) — `loadUserByUsername(email)` is used by Spring Security's login flow; `loadUserById(userId)` is used by `JwtAuthFilter` to resolve the authenticated user on each request.
 - **`SecurityConfig`** (`configuration/`) — stateless sessions, CSRF disabled, permit `POST /v1/users` and `POST /v1/auth/login`, require authentication for all other endpoints; register `JwtAuthFilter` before `UsernamePasswordAuthenticationFilter`.
 
 ### Using the authenticated user in controllers
