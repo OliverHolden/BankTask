@@ -35,7 +35,7 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login attempt for email: {}", request.getEmail());
+        log.info("Login attempt received");
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );

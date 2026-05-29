@@ -39,6 +39,7 @@ public class UserService { ... }
 - `INFO` on entry to every public service method, including key identifiers
 - `WARN` for 403 and 404 outcomes
 - `ERROR` (with the exception) before re-throwing inside catch blocks
+- **Never log PII** — email addresses, passwords, phone numbers, and address fields must never appear in log output
 
 ## Swagger / OpenAPI annotations
 

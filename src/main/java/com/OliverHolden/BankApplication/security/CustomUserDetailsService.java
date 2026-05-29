@@ -18,11 +18,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     // Spring Security requires this method name — in this application "username" is the user's email
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        log.info("Loading user by email: {}", email);
+        log.info("Loading user by username");
         return userRepository.findByEmail(email)
                 .map(CustomUserPrincipal::new)
                 .orElseThrow(() -> {
-                    log.warn("User not found for email: {}", email);
+                    log.warn("User not found for provided credentials");
                     return new UsernameNotFoundException("User not found");
                 });
     }
