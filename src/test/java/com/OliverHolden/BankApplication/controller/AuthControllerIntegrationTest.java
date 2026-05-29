@@ -193,12 +193,11 @@ class AuthControllerIntegrationTest {
 
     @Test
     void protectedEndpoint_validToken_passesAuthLayer() throws Exception {
-        // A valid token should pass the auth layer — endpoint returns 404 (not yet implemented)
-        // rather than 401, confirming the JWT filter is working correctly
+        // A valid token must pass the JWT filter and reach the endpoint — confirmed by 200, not 401
         String token = jwtTokenProvider.generateToken(TEST_USER_ID).token();
 
         mockMvc.perform(get("/v1/users/" + TEST_USER_ID)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
+                .andExpect(status().isOk());
     }
 }

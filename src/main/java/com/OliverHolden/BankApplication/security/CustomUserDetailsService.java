@@ -26,4 +26,14 @@ public class CustomUserDetailsService implements UserDetailsService {
                     return new UsernameNotFoundException("User not found");
                 });
     }
+
+    public UserDetails loadUserById(String userId) throws UsernameNotFoundException {
+        log.info("Loading user by ID");
+        return userRepository.findById(userId)
+                .map(CustomUserPrincipal::new)
+                .orElseThrow(() -> {
+                    log.warn("User not found for ID in JWT");
+                    return new UsernameNotFoundException("User not found");
+                });
+    }
 }
