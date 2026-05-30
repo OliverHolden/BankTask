@@ -41,7 +41,7 @@ class AuthControllerIntegrationTest {
 
     private static final String TEST_EMAIL = "auth-test@example.com";
     private static final String TEST_PASSWORD = "Password123!";
-    private static final String TEST_USER_ID = "usr-auth-test";
+    private static final String TEST_USER_ID = "usr-authtest";
 
     @BeforeEach
     void setUp() {

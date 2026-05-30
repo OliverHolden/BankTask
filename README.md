@@ -56,6 +56,43 @@ src/main/java/com/OliverHolden/BankApplication/
 └── utility/             # Shared helpers
 ```
 
+## Authentication flow
+
+```bash
+# 1. Create a user
+curl -X POST http://localhost:8080/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","password":"Secret123!","phoneNumber":"+447911000001","address":{"line1":"1 High St","town":"London","county":"Greater London","postcode":"SW1A 1AA"}}'
+
+# 2. Log in to obtain a JWT
+curl -X POST http://localhost:8080/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"Secret123!"}'
+# → {"token":"<jwt>","tokenType":"Bearer","expiresAt":"..."}
+
+# 3. Use the token on protected endpoints
+curl http://localhost:8080/v1/accounts \
+  -H "Authorization: Bearer <jwt>"
+```
+
+## Testing
+
+```bash
+mvn test
+```
+
+Tests are structured in three layers:
+
+| Layer | Framework | Coverage |
+|-------|-----------|----------|
+| Unit | JUnit 5 + Mockito | Service methods: happy path and every error branch |
+| Integration | `@SpringBootTest` + H2 + `MockMvc` | Full HTTP stack including request serialisation and response shape |
+| Security | Integration tests | `401` for every protected endpoint with no token; `403` for cross-user access |
+
+## Conventions
+
+Code conventions, logging rules, Swagger annotation requirements, and Lombok usage are documented in [CLAUDE.md](CLAUDE.md).
+
 ## OpenAPI spec
 
 The full API spec lives at [src/main/resources/openapi.yaml](src/main/resources/openapi.yaml). Swagger UI is served at `http://localhost:8080/swagger-ui/index.html` once the application is running.
