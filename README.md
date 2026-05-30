@@ -25,9 +25,11 @@ The dev profile must be active — it supplies `jwt.secret` which is absent from
 ### Run with Docker
 
 ```bash
-docker build -f Notes/Dockerfile -t eagle-bank .
-docker run -p 8080:8080 eagle-bank
+docker build -t eagle-bank .
+docker run -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev eagle-bank
 ```
+
+Swagger UI will be available at `http://localhost:8080/swagger-ui/index.html` once the container is running.
 
 ### Run tests
 

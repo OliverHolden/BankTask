@@ -8,11 +8,11 @@
 		<version>4.0.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>demo</artifactId>
+	<groupId>com.OliverHolden</groupId>
+	<artifactId>eagle-bank</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>eagle-bank</name>
+	<description>Eagle Bank REST API — Barclays take-home coding test</description>
 	<url/>
 	<licenses>
 		<license/>
