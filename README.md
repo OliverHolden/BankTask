@@ -93,6 +93,32 @@ Tests are structured in three layers:
 
 Code conventions, logging rules, Swagger annotation requirements, and Lombok usage are documented in [CLAUDE.md](CLAUDE.md).
 
+## Assumptions
+
+- **H2 in-memory database** — data does not persist across restarts. Swap the datasource configuration for PostgreSQL or MySQL for persistence.
+- **Single currency, single sort code** — all accounts are GBP-denominated with sort code `10-10-10`. The spec defines both as single-value enums; multi-currency and multi-sort-code support would require schema changes.
+- **Account number format** — `01XXXXXX` (01 + 6 random digits, 1,000,000 address space). Uniqueness is guaranteed by a retry loop; a DB sequence would be the production approach.
+- **No password policy** — any non-blank string is accepted as a password. `@Size(min=8)` and complexity constraints would be added before production.
+- **No email verification** — any email address can be registered without proof of ownership.
+- **HTTPS assumed at the deployment layer** — the API itself does not enforce TLS; a load balancer or reverse proxy is assumed to handle it.
+
+## Out of scope
+
+These were consciously deferred as outside the spec or disproportionate to a take-home exercise:
+
+| Item | Rationale |
+|------|-----------|
+| Token refresh / revocation | Short-lived tokens with refresh would require a server-side token store; stateless JWT is appropriate for this scope |
+| 2FA / MFA | No phone or TOTP infrastructure; flagged as out of scope in the brief |
+| Rate limiting on `POST /v1/auth/login` | Important in production to prevent brute-force; would use a filter + Redis counter |
+| Audit logging | `createdTimestamp` / `updatedTimestamp` on entities; a full audit trail (who changed what, when) would need a separate audit table |
+| Distributed transaction locking | A single-instance H2 demo does not face concurrent node contention; distributed locks (Redlock, DB advisory locks) are production concerns |
+| UUID-based identifiers at scale | `usr-<uuid>` and `tan-<uuid>` would eliminate collision risk; the current prefixed-random format satisfies the spec patterns and is honest about demo scope |
+| Privileged roles (admin, teller) | The spec defines a single user type; role-based access control would require a `roles` table and Spring Security method security |
+| External payment gateway | Out of scope per the brief |
+| Soft delete | Hard deletion is used; a `deletedAt` timestamp and `status` field would be needed to preserve history and support account recovery |
+| Optimistic locking | `@Version` on `User` and `Account` would prevent lost-update races on concurrent PATCH requests |
+
 ## OpenAPI spec
 
 The full API spec lives at [src/main/resources/openapi.yaml](src/main/resources/openapi.yaml). Swagger UI is served at `http://localhost:8080/swagger-ui/index.html` once the application is running.
