@@ -2,6 +2,7 @@ package com.OliverHolden.BankApplication.exception;
 
 import com.OliverHolden.BankApplication.dto.response.BadRequestErrorResponse;
 import com.OliverHolden.BankApplication.dto.response.ErrorResponse;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -16,8 +17,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
-
-
 
 @Slf4j
 @RestControllerAdvice
@@ -43,9 +42,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                    HttpHeaders headers,
                                                                    HttpStatusCode status,
                                                                    WebRequest request) {
-        log.warn("Unreadable request body: {}", ex.getMessage());
+        log.warn("Unreadable request body");
         return ResponseEntity.badRequest()
                 .body(new BadRequestErrorResponse("Invalid request body", List.of()));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<BadRequestErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        log.warn("Constraint violation: {}", ex.getMessage());
+        List<BadRequestErrorResponse.FieldError> details = ex.getConstraintViolations().stream()
+                .map(cv -> {
+                    String path = cv.getPropertyPath().toString();
+                    String field = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
+                    return new BadRequestErrorResponse.FieldError(
+                            field,
+                            cv.getMessage(),
+                            cv.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName());
+                })
+                .toList();
+        return ResponseEntity.badRequest()
+                .body(new BadRequestErrorResponse("Validation failed", details));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

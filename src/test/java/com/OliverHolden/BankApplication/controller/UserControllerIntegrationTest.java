@@ -1,6 +1,7 @@
 package com.OliverHolden.BankApplication.controller;
 
 import com.OliverHolden.BankApplication.model.Account;
+import com.OliverHolden.BankApplication.model.AccountType;
 import com.OliverHolden.BankApplication.model.Address;
 import com.OliverHolden.BankApplication.model.User;
 import com.OliverHolden.BankApplication.repository.AccountRepository;
@@ -37,9 +38,9 @@ class UserControllerIntegrationTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
-    private static final String USER_A_ID    = "usr-int-a";
+    private static final String USER_A_ID    = "usr-intA";
     private static final String USER_A_EMAIL = "user-a@example.com";
-    private static final String USER_B_ID    = "usr-int-b";
+    private static final String USER_B_ID    = "usr-intB";
     private static final String USER_B_EMAIL = "user-b@example.com";
     private static final String PASSWORD     = "Password123!";
 
@@ -148,6 +149,17 @@ class UserControllerIntegrationTest {
     }
 
     @Test
+    void getUser_invalidUserIdFormat_returns400() throws Exception {
+        // Spec: GET /v1/users/{userId} (operationId: fetchUserByID)
+        // userId must match ^usr-[A-Za-z0-9]+$; invalid format returns 400 with BadRequestErrorResponse
+        mockMvc.perform(get("/v1/users/{userId}", "not-a-valid-id")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").isNotEmpty())
+                .andExpect(jsonPath("$.details").isArray());
+    }
+
+    @Test
     void getUser_differentUser_returns403() throws Exception {
         // Spec: 403 — authenticated user may not access another user's record
         mockMvc.perform(get("/v1/users/{userId}", USER_B_ID)
@@ -203,6 +215,29 @@ class UserControllerIntegrationTest {
     }
 
     @Test
+    void updateUser_emptyBody_returns200WithNoChanges() throws Exception {
+        // Spec: PATCH /v1/users/{userId} (operationId: updateUserByID) — all fields optional
+        mockMvc.perform(patch("/v1/users/{userId}", USER_A_ID)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Test User"))
+                .andExpect(jsonPath("$.email").value(USER_A_EMAIL));
+    }
+
+    @Test
+    void updateUser_emptyName_returns400() throws Exception {
+        // Spec: 400 — @Size(min=1) on name rejects empty string when the field is supplied
+        mockMvc.perform(patch("/v1/users/{userId}", USER_A_ID)
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.details[*].field", hasItem("name")));
+    }
+
+    @Test
     void updateUser_duplicateEmail_returns409() throws Exception {
         // Spec: 409 — new email is already taken by another user
         mockMvc.perform(patch("/v1/users/{userId}", USER_A_ID)
@@ -248,6 +283,13 @@ class UserControllerIntegrationTest {
         accountRepository.save(Account.builder()
                 .accountNumber("01000001")
                 .userId(USER_A_ID)
+                .sortCode("10-10-10")
+                .name("Test Account")
+                .accountType(AccountType.personal)
+                .balance(java.math.BigDecimal.ZERO)
+                .currency("GBP")
+                .createdTimestamp(OffsetDateTime.now())
+                .updatedTimestamp(OffsetDateTime.now())
                 .build());
 
         mockMvc.perform(delete("/v1/users/{userId}", USER_A_ID)

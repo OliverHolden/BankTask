@@ -1,16 +1,15 @@
 package com.OliverHolden.BankApplication.service;
 
-import com.OliverHolden.BankApplication.dto.AddressDto;
 import com.OliverHolden.BankApplication.dto.request.CreateUserRequest;
 import com.OliverHolden.BankApplication.dto.request.UpdateUserRequest;
 import com.OliverHolden.BankApplication.dto.response.UserResponse;
 import com.OliverHolden.BankApplication.exception.ConflictException;
 import com.OliverHolden.BankApplication.exception.ForbiddenException;
 import com.OliverHolden.BankApplication.exception.NotFoundException;
-import com.OliverHolden.BankApplication.model.Address;
 import com.OliverHolden.BankApplication.model.User;
 import com.OliverHolden.BankApplication.repository.AccountRepository;
 import com.OliverHolden.BankApplication.repository.UserRepository;
+import com.OliverHolden.BankApplication.utility.AddressMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -45,13 +44,14 @@ public class UserService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .address(toAddress(request.getAddress()))
+                .address(AddressMapper.toEntity(request.getAddress()))
                 .createdTimestamp(now)
                 .updatedTimestamp(now)
                 .build();
         try {
             return toResponse(userRepository.save(user));
         } catch (DataIntegrityViolationException e) {
+            log.error("Data integrity violation saving user", e);
             throw new ConflictException("Email already registered");
         }
     }
@@ -90,9 +90,14 @@ public class UserService {
             user.setEmail(request.getEmail());
         }
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
-        if (request.getAddress() != null) user.setAddress(toAddress(request.getAddress()));
+        if (request.getAddress() != null) user.setAddress(AddressMapper.toEntity(request.getAddress()));
         user.setUpdatedTimestamp(OffsetDateTime.now(ZoneOffset.UTC));
-        return toResponse(userRepository.save(user));
+        try {
+            return toResponse(userRepository.save(user));
+        } catch (DataIntegrityViolationException e) {
+            log.error("Data integrity violation updating user", e);
+            throw new ConflictException("Email already registered");
+        }
     }
 
     @Transactional
@@ -112,35 +117,13 @@ public class UserService {
         userRepository.deleteById(userId);
     }
 
-    private Address toAddress(AddressDto dto) {
-        return Address.builder()
-                .line1(dto.getLine1())
-                .line2(dto.getLine2())
-                .line3(dto.getLine3())
-                .town(dto.getTown())
-                .county(dto.getCounty())
-                .postcode(dto.getPostcode())
-                .build();
-    }
-
     private UserResponse toResponse(User user) {
-        AddressDto addressDto = null;
-        if (user.getAddress() != null) {
-            addressDto = AddressDto.builder()
-                    .line1(user.getAddress().getLine1())
-                    .line2(user.getAddress().getLine2())
-                    .line3(user.getAddress().getLine3())
-                    .town(user.getAddress().getTown())
-                    .county(user.getAddress().getCounty())
-                    .postcode(user.getAddress().getPostcode())
-                    .build();
-        }
         return UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .address(addressDto)
+                .address(AddressMapper.toDto(user.getAddress()))
                 .createdTimestamp(user.getCreatedTimestamp())
                 .updatedTimestamp(user.getUpdatedTimestamp())
                 .build();

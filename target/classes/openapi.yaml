@@ -82,7 +82,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         '403':
-          description: The user is not allowed to access the transaction
+          description: The user is not allowed to create a bank account
           content:
             application/json:
               schema:
@@ -262,7 +262,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         '403':
-          description: The user is not allowed to delete the bank account details
+          description: The user is not allowed to delete the bank account
           content:
             application/json:
               schema:
@@ -323,7 +323,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         '403':
-          description: The user is not allowed to delete the bank account details
+          description: The user is not allowed to access this account
           content:
             application/json:
               schema:
@@ -532,7 +532,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         '403':
-          description: The user is not allowed to access the transaction
+          description: The user is not allowed to access this record
           content:
             application/json:
               schema:
@@ -591,7 +591,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         '403':
-          description: The user is not allowed to access the transaction
+          description: The user is not allowed to update this record
           content:
             application/json:
               schema:
@@ -651,7 +651,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         '403':
-          description: The user is not allowed to access the transaction
+          description: The user is not allowed to delete this record
           content:
             application/json:
               schema:
@@ -800,7 +800,7 @@ components:
       properties:
         id: 
           type: string
-          pattern: ^tan-[A-Za-z0-9]$
+          pattern: ^tan-[A-Za-z0-9]+$
           examples:
             - tan-123abc
         amount:
