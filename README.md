@@ -43,6 +43,22 @@ mvn test
 
 All protected endpoints require an `Authorization: Bearer <token>` header. Obtain a token via `POST /v1/auth/login`.
 
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/v1/users` | No | Create a user |
+| `GET` | `/v1/users/{userId}` | Yes | Fetch a user |
+| `PATCH` | `/v1/users/{userId}` | Yes | Update a user |
+| `DELETE` | `/v1/users/{userId}` | Yes | Delete a user (blocked if accounts exist) |
+| `POST` | `/v1/auth/login` | No | Authenticate and obtain a JWT |
+| `POST` | `/v1/accounts` | Yes | Create a bank account |
+| `GET` | `/v1/accounts` | Yes | List all accounts for the authenticated user |
+| `GET` | `/v1/accounts/{accountNumber}` | Yes | Fetch a bank account |
+| `PATCH` | `/v1/accounts/{accountNumber}` | Yes | Update a bank account |
+| `DELETE` | `/v1/accounts/{accountNumber}` | Yes | Delete a bank account |
+| `POST` | `/v1/accounts/{accountNumber}/transactions` | Yes | Create a transaction (deposit or withdrawal) |
+| `GET` | `/v1/accounts/{accountNumber}/transactions` | Yes | List transactions (newest first) |
+| `GET` | `/v1/accounts/{accountNumber}/transactions/{transactionId}` | Yes | Fetch a transaction |
+
 Full endpoint documentation is available via Swagger UI at `http://localhost:8081/swagger-ui/index.html` once the application is running with the dev profile.
 
 ## Project structure
@@ -120,10 +136,12 @@ These were consciously deferred as outside the spec or disproportionate to a tak
 | Audit logging | `createdTimestamp` / `updatedTimestamp` on entities; a full audit trail (who changed what, when) would need a separate audit table |
 | External metrics backend | Actuator metrics are exposed on the internal dev port; publishing to Graphite or Prometheus would require deployment-specific registry configuration |
 | Distributed transaction locking | A single-instance H2 demo does not face concurrent node contention; distributed locks (Redlock, DB advisory locks) are production concerns |
-| UUID-based identifiers at scale | `usr-<uuid>` and `tan-<uuid>` would eliminate collision risk; the current prefixed-random format satisfies the spec patterns and is honest about demo scope |
+| Collision-safe account numbers | `accountNumber` uses `01` + 6 random digits (1,000,000 address space) with a uniqueness retry loop. `userId` (`usr-` + UUID) and `transactionId` (`tan-` + UUID) already use UUID and have negligible collision probability; a DB sequence would be the production approach for `accountNumber` |
 | Privileged roles (admin, teller) | The spec defines a single user type; role-based access control would require a `roles` table and Spring Security method security |
 | Soft delete | Hard deletion is used; a `deletedAt` timestamp and `status` field would be needed to preserve history and support account recovery |
-| Optimistic locking | `@Version` on `User` and `Account` would prevent lost-update races on concurrent PATCH requests |
+| Orphaned transactions on account delete | `DELETE /v1/accounts/{accountNumber}` removes the account row but leaves its transaction records in place. The correct behaviour (cascade delete vs. retain for audit) is a product decision — see product owner questions |
+| Optimistic locking | `@Version` on `User` and `Account` would prevent lost-update races on concurrent PATCH requests and concurrent deposits/withdrawals (two simultaneous transactions reading the same balance could produce a lost update); the fix is `@Version` + retry on `OptimisticLockException`, or a pessimistic `SELECT ... FOR UPDATE` |
+| Pagination on list endpoints | `GET /v1/accounts` and `GET /v1/accounts/{accountNumber}/transactions` return the full result set. A real ledger would add `page`/`size` (or cursor) query parameters and a DB index on `account_number` and `user_id` |
 
 ## OpenAPI spec
 
