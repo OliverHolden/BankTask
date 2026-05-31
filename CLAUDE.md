@@ -3,11 +3,11 @@
 ## Running the application
 
 ```bash
-mvn spring-boot:run   # start on http://localhost:8080
+mvn spring-boot:run   # public API on http://localhost:8080, internal tooling on http://localhost:8081
 mvn test              # run tests
 ```
 
-Swagger UI is available at `http://localhost:8080/swagger-ui/index.html` when running with the `dev` profile (disabled by default).
+Swagger UI is available at `http://localhost:8081/swagger-ui/index.html` when running with the `dev` profile (disabled by default).
 
 ## Package structure
 
@@ -91,9 +91,10 @@ spring.h2.console.enabled=false
 springdoc.swagger-ui.enabled=true
 springdoc.api-docs.enabled=true
 spring.h2.console.enabled=true
+app.internal-port=8081
 ```
 
-The `SecurityConfig` `permitAll()` rules for these paths can remain unconditional. When a console is disabled via its property, the framework never registers the route, so the permit matches nothing and creates no security gap. The property itself is the gate — `SecurityConfig` does not need to inspect it.
+The `SecurityConfig` `permitAll()` rules for these paths must also require the request to arrive on the configured internal port. The public API port must deny `/swagger-ui/**`, `/v3/api-docs/**`, `/h2-console/**`, and `/actuator/**`.
 
 Never commit `spring.h2.console.enabled=true` or `springdoc.swagger-ui.enabled=true` to `application.properties`.
 
