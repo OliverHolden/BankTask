@@ -102,6 +102,8 @@ Code conventions, logging rules, Swagger annotation requirements, and Lombok usa
 - **H2 in-memory database** — data does not persist across restarts. Swap the datasource configuration for PostgreSQL or MySQL for persistence.
 - **Single currency, single sort code** — all accounts are GBP-denominated with sort code `10-10-10`. The spec defines both as single-value enums; multi-currency and multi-sort-code support would require schema changes.
 - **Account number format** — `01XXXXXX` (01 + 6 random digits, 1,000,000 address space). Uniqueness is guaranteed by a retry loop; a DB sequence would be the production approach.
+- **Monetary precision** — amounts are limited to two decimal places (`@Digits(integer = 5, fraction = 2)`), matching the spec's "up to two decimal places". A value with a third decimal is rejected with `400` rather than being silently rounded at the persistence boundary.
+- **Transaction ordering** — `GET /v1/accounts/{accountNumber}/transactions` returns transactions newest-first (by `createdTimestamp`). Pagination is out of scope (see below); a real ledger would page and index on `account_number`.
 - **No password policy** — any non-blank string is accepted as a password. `@Size(min=8)` and complexity constraints would be added before production.
 - **No email verification** — any email address can be registered without proof of ownership.
 - **HTTPS assumed at the deployment layer** — the API itself does not enforce TLS; a load balancer or reverse proxy is assumed to handle it.

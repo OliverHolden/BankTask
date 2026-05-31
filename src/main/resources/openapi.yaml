@@ -335,7 +335,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         '422':
-          description: Insufficient funds to process transaction
+          description: Insufficient funds, or deposit would exceed the maximum account balance
           content:
             application/json:
               schema:
@@ -765,6 +765,7 @@ components:
           format: double
           minimum: 0.00
           maximum: 10000.00
+          multipleOf: 0.01
           description: "Currency amount with up to two decimal places"
           examples:
             - 10.99
@@ -808,13 +809,14 @@ components:
           format: double
           minimum: 0.00
           maximum: 10000.00
+          multipleOf: 0.01
         currency:
           type: string
           enum:
             - "GBP"
         type:
           type: string
-          enum: 
+          enum:
             - "deposit"
             - "withdrawal"
         reference:
