@@ -8,6 +8,7 @@ A RESTful banking API built with Spring Boot for the Barclays take-home coding t
 - Spring Boot 4.0.6 (Web MVC)
 - Spring Security + JWT
 - Spring Data JPA (H2 in-memory database)
+- Spring Boot Actuator (dev health and metrics endpoints)
 - Lombok
 - Maven
 - springdoc-openapi (Swagger UI)
@@ -20,16 +21,17 @@ A RESTful banking API built with Spring Boot for the Barclays take-home coding t
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-The dev profile must be active — it supplies `jwt.secret` which is absent from the base `application.properties`. The API will start on `http://localhost:8080`.
+The dev profile must be active — it supplies `jwt.secret` which is absent from the base `application.properties`. The API will start on `http://localhost:8080`; internal tooling is exposed only on `http://localhost:8081`.
 
 ### Run with Docker
 
 ```bash
 docker build -t eagle-bank .
-docker run -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev eagle-bank
+docker run -p 8080:8080 -p 8081:8081 -e SPRING_PROFILES_ACTIVE=dev eagle-bank
 ```
 
-Swagger UI will be available at `http://localhost:8080/swagger-ui/index.html` once the container is running.
+Swagger UI will be available at `http://localhost:8081/swagger-ui/index.html` once the container is running.
+The dev profile also exposes H2 Console at `http://localhost:8081/h2-console/` and Actuator endpoints at `http://localhost:8081/actuator/health`, `http://localhost:8081/actuator/info`, and `http://localhost:8081/actuator/metrics`.
 
 ### Run tests
 
@@ -41,7 +43,7 @@ mvn test
 
 All protected endpoints require an `Authorization: Bearer <token>` header. Obtain a token via `POST /v1/auth/login`.
 
-Full endpoint documentation is available via Swagger UI at `http://localhost:8080/swagger-ui/index.html` once the application is running.
+Full endpoint documentation is available via Swagger UI at `http://localhost:8081/swagger-ui/index.html` once the application is running with the dev profile.
 
 ## Project structure
 
@@ -112,15 +114,15 @@ These were consciously deferred as outside the spec or disproportionate to a tak
 |------|-----------|
 | Token refresh / revocation | Short-lived tokens with refresh would require a server-side token store; stateless JWT is appropriate for this scope |
 | 2FA / MFA | No phone or TOTP infrastructure; flagged as out of scope in the brief |
-| Rate limiting on `POST /v1/auth/login` | Important in production to prevent brute-force; would use a filter + Redis counter |
+| Rate limiting on endpoints like `POST /v1/auth/login` | Important in production to prevent brute-force; would use a filter + Redis counter |
 | Audit logging | `createdTimestamp` / `updatedTimestamp` on entities; a full audit trail (who changed what, when) would need a separate audit table |
+| External metrics backend | Actuator metrics are exposed on the internal dev port; publishing to Graphite or Prometheus would require deployment-specific registry configuration |
 | Distributed transaction locking | A single-instance H2 demo does not face concurrent node contention; distributed locks (Redlock, DB advisory locks) are production concerns |
 | UUID-based identifiers at scale | `usr-<uuid>` and `tan-<uuid>` would eliminate collision risk; the current prefixed-random format satisfies the spec patterns and is honest about demo scope |
 | Privileged roles (admin, teller) | The spec defines a single user type; role-based access control would require a `roles` table and Spring Security method security |
-| External payment gateway | Out of scope per the brief |
 | Soft delete | Hard deletion is used; a `deletedAt` timestamp and `status` field would be needed to preserve history and support account recovery |
 | Optimistic locking | `@Version` on `User` and `Account` would prevent lost-update races on concurrent PATCH requests |
 
 ## OpenAPI spec
 
-The full API spec lives at [src/main/resources/openapi.yaml](src/main/resources/openapi.yaml). Swagger UI is served at `http://localhost:8080/swagger-ui/index.html` once the application is running.
+The full API spec lives at [src/main/resources/openapi.yaml](src/main/resources/openapi.yaml). Swagger UI is served at `http://localhost:8081/swagger-ui/index.html` once the application is running with the dev profile.
