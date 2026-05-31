@@ -95,6 +95,26 @@ curl http://localhost:8080/v1/accounts \
   -H "Authorization: Bearer <jwt>"
 ```
 
+## CI / CD
+
+Every push and pull request to `main` runs the CI pipeline via GitHub Actions:
+
+```
+compile → unit tests → integration tests
+```
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `compile.yml` | Every run | Compiles the project (`mvn package -DskipTests`) |
+| `unit-tests.yml` | After compile | Runs all `*Test` classes, excluding integration tests |
+| `integration-tests.yml` | After unit tests | Runs all `*IntegrationTest` classes with the `dev` profile active |
+
+Stages are chained with `needs:` — a failed compile aborts the test stages, and a failed unit test stage aborts integration tests.
+
+### Security scanning
+
+Snyk is integrated via the **Snyk GitHub integration**, which monitors the repository's dependencies for known vulnerabilities and raises pull requests when fixes are available. A `snyk.yml` workflow also runs `mvn snyk:test` on demand, using a `SNYK_TOKEN` secret stored in the repository settings.
+
 ## Testing
 
 ```bash
